@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Download } from "lucide-react";
 
 const NotificationImageGenerator = () => {
@@ -11,11 +11,35 @@ const NotificationImageGenerator = () => {
     vacancies: "18",
     logoUrl: "",
     gyapakLogoUrl: "",
+    notificationType: "Latest Notification",
   });
 
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const handleInputChange = (e) => {
+  // Load default gyapak logo on component mount
+  useEffect(() => {
+    const loadDefaultLogo = async () => {
+      try {
+        const response = await fetch('/gyapak.png');
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result && typeof event.target.result === 'string') {
+            setFormData((prev) => ({
+              ...prev,
+              gyapakLogoUrl: event.target!.result as string,
+            }));
+          }
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('Failed to load default gyapak logo:', error);
+      }
+    };
+    loadDefaultLogo();
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -23,37 +47,29 @@ const NotificationImageGenerator = () => {
     }));
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        setFormData((prev) => ({
-          ...prev,
-          logoUrl: event.target.result,
-        }));
+        if (event.target?.result && typeof event.target.result === 'string') {
+          setFormData((prev) => ({
+            ...prev,
+            logoUrl: event.target!.result as string,
+          }));
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleGyapakLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData((prev) => ({
-          ...prev,
-          gyapakLogoUrl: event.target.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const generateImage = () => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     canvas.width = 1456;
     canvas.height = 816;
@@ -71,9 +87,9 @@ const NotificationImageGenerator = () => {
     ];
     ctx.fillStyle = "#a0616a";
     dotPositions.forEach(([x, y]) => {
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx!.beginPath();
+      ctx!.arc(x, y, 5, 0, Math.PI * 2);
+      ctx!.fill();
     });
 
     const rightDots = [
@@ -85,16 +101,16 @@ const NotificationImageGenerator = () => {
       [1383, 48],
     ];
     rightDots.forEach(([x, y]) => {
-      ctx.fillStyle = "#d4a5a5";
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx!.fillStyle = "#d4a5a5";
+      ctx!.beginPath();
+      ctx!.arc(x, y, 5, 0, Math.PI * 2);
+      ctx!.fill();
     });
 
     if (formData.gyapakLogoUrl) {
       const gyapakLogo = new Image();
       gyapakLogo.onload = () => {
-        ctx.drawImage(gyapakLogo, 170, 70, 260, 80);
+        ctx!.drawImage(gyapakLogo, 170, 70, 260, 80);
         drawRestOfImage();
       };
       gyapakLogo.src = formData.gyapakLogoUrl;
@@ -109,40 +125,40 @@ const NotificationImageGenerator = () => {
     }
 
     function drawRestOfImage() {
-      ctx.fillStyle = "#0d5fb8";
-      ctx.fillRect(728, 69, 434, 79);
-      ctx.fillStyle = "white";
-      ctx.font = "bold 42px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("Latest Notification", 728 + 217, 125);
-      ctx.textAlign = "left";
+      ctx!.fillStyle = "#0d5fb8";
+      ctx!.fillRect(728, 69, 434, 79);
+      ctx!.fillStyle = "white";
+      ctx!.font = "bold 42px Arial";
+      ctx!.textAlign = "center";
+      ctx!.fillText(formData.notificationType, 728 + 217, 125);
+      ctx!.textAlign = "left";
 
       if (formData.logoUrl) {
         const logoImg = new Image();
         logoImg.onload = () => {
-          ctx.drawImage(logoImg, 140, 210, 340, 340);
+          ctx!.drawImage(logoImg, 140, 210, 340, 340);
           continueDrawing();
         };
         logoImg.src = formData.logoUrl;
       } else {
-        ctx.strokeStyle = "#8b7355";
-        ctx.lineWidth = 15;
-        ctx.beginPath();
-        ctx.arc(310, 380, 170, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx!.strokeStyle = "#8b7355";
+        ctx!.lineWidth = 15;
+        ctx!.beginPath();
+        ctx!.arc(310, 380, 170, 0, Math.PI * 2);
+        ctx!.stroke();
 
-        ctx.fillStyle = "#8b7355";
-        ctx.font = "bold 120px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("⚕️", 310, 420);
+        ctx!.fillStyle = "#8b7355";
+        ctx!.font = "bold 120px Arial";
+        ctx!.textAlign = "center";
+        ctx!.fillText("⚕️", 310, 420);
 
         continueDrawing();
       }
 
       function continueDrawing() {
-        ctx.fillStyle = "#0d5fb8";
-        ctx.font = "bold 48px Arial";
-        ctx.textAlign = "left";
+        ctx!.fillStyle = "#0d5fb8";
+        ctx!.font = "bold 48px Arial";
+        ctx!.textAlign = "left";
 
         const orgName = formData.organizationName;
         const maxWidth = 850;
@@ -153,10 +169,10 @@ const NotificationImageGenerator = () => {
 
         words.forEach((word, index) => {
           const testLine = line + word + " ";
-          const metrics = ctx.measureText(testLine);
+          const metrics = ctx!.measureText(testLine);
 
           if (metrics.width > maxWidth && line !== "") {
-            ctx.fillText(line, 598, y);
+            ctx!.fillText(line, 598, y);
             line = word + " ";
             y += lineHeight;
           } else {
@@ -164,26 +180,26 @@ const NotificationImageGenerator = () => {
           }
 
           if (index === words.length - 1) {
-            ctx.fillText(line, 598, y);
+            ctx!.fillText(line, 598, y);
           }
         });
 
         const postY = y + 90;
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 36px Arial";
-        ctx.fillText("👨‍🔬", 705, postY);
-        ctx.fillText(
+        ctx!.fillStyle = "#333";
+        ctx!.font = "bold 36px Arial";
+        ctx!.fillText("👨‍🔬", 705, postY);
+        ctx!.fillText(
           `${formData.postName} - ${formData.postCount} posts`,
           755,
           postY
         );
 
-        ctx.fillText("📅", 705, postY + 65);
-        ctx.fillStyle = "#d32f2f";
-        ctx.fillText(`Last Date: ${formData.lastDate}`, 755, postY + 65);
+        ctx!.fillText("📅", 705, postY + 65);
+        ctx!.fillStyle = "#d32f2f";
+        ctx!.fillText(`Last Date: ${formData.lastDate}`, 755, postY + 65);
 
         const buttonY = postY + 150;
-        const gradient = ctx.createLinearGradient(
+        const gradient = ctx!.createLinearGradient(
           783,
           buttonY - 30,
           1250,
@@ -193,46 +209,46 @@ const NotificationImageGenerator = () => {
         gradient.addColorStop(1, "#9c27b0");
 
         const buttonWidth = 467;
-        const buttonX = (canvas.width - buttonWidth) / 2;
+        const buttonX = (canvas!.width - buttonWidth) / 2;
 
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.roundRect(buttonX, buttonY - 30, buttonWidth, 76, 38);
-        ctx.fill();
+        ctx!.fillStyle = gradient;
+        ctx!.beginPath();
+        ctx!.roundRect(buttonX, buttonY - 30, buttonWidth, 76, 38);
+        ctx!.fill();
 
-        ctx.fillStyle = "white";
-        ctx.font = "bold 38px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(
+        ctx!.fillStyle = "white";
+        ctx!.font = "bold 38px Arial";
+        ctx!.textAlign = "center";
+        ctx!.fillText(
           `Vacancy : ${formData.vacancies} Posts`,
-          canvas.width / 2,
+          canvas!.width / 2,
           buttonY + 15
         );
 
-        ctx.fillStyle = "#0d5fb8";
-        ctx.fillRect(0, 705, canvas.width, 111);
+        ctx!.fillStyle = "#0d5fb8";
+        ctx!.fillRect(0, 705, canvas!.width, 111);
 
-        ctx.fillStyle = "white";
-        ctx.font = "bold 56px Arial";
-        ctx.fillText("For More info Visit www.gyapak.in", 728, 780);
+        ctx!.fillStyle = "white";
+        ctx!.font = "bold 56px Arial";
+        ctx!.fillText("For More info Visit www.gyapak.in", 728, 780);
 
         if (formData.gyapakLogoUrl) {
-          ctx.globalAlpha = 0.2;
+          ctx!.globalAlpha = 0.15;
           const watermarkLogo = new Image();
           watermarkLogo.onload = () => {
-            const watermarkWidth = 1000;
-            const watermarkHeight = 300;
-            const x = (canvas.width - watermarkWidth) / 2;
-            const y = (canvas.height - watermarkHeight) / 2 - 50;
-            ctx.drawImage(watermarkLogo, x, y, watermarkWidth, watermarkHeight);
-            ctx.globalAlpha = 1.0;
+            const watermarkWidth = 1350;
+            const watermarkHeight = 400;
+            const x = (canvas!.width - watermarkWidth) / 2;
+            const y = (canvas!.height - watermarkHeight) / 2 - 50;
+            ctx!.drawImage(watermarkLogo, x, y, watermarkWidth, watermarkHeight);
+            ctx!.globalAlpha = 1.0;
           };
           watermarkLogo.src = formData.gyapakLogoUrl;
         } else {
-          ctx.fillStyle = "rgba(139, 74, 158, 0.20)";
-          ctx.font = "bold 200px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText("gyapak", canvas.width / 2, canvas.height / 2);
+          ctx!.fillStyle = "rgba(139, 74, 158, 0.20)";
+          ctx!.font = "bold 200px Arial";
+          ctx!.textAlign = "center";
+          ctx!.fillText("gyapak", canvas!.width / 2, canvas!.height / 2);
         }
       }
     }
@@ -242,6 +258,7 @@ const NotificationImageGenerator = () => {
     generateImage();
     setTimeout(() => {
       const canvas = canvasRef.current;
+      if (!canvas) return;
       const link = document.createElement("a");
       link.download = "notification.png";
       link.href = canvas.toDataURL();
@@ -266,17 +283,19 @@ const NotificationImageGenerator = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Gyapak Logo (Required)
+                  Notification Type
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleGyapakLogoUpload}
-                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload the gyapak.in logo (PNG recommended)
-                </p>
+                <select
+                  name="notificationType"
+                  value={formData.notificationType}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="Latest Notification">Latest Notification</option>
+                  <option value="Admit Card">Admit Card</option>
+                  <option value="Result">Result</option>
+
+                </select>
               </div>
 
               <div>
@@ -288,7 +307,7 @@ const NotificationImageGenerator = () => {
                   value={formData.organizationName}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
-                  rows="3"
+                  rows={3}
                   placeholder="e.g., All India Institute of Medical Sciences, Bhubaneswar (AIIMS Bhubaneswar) Recruitment 2025"
                 />
               </div>
