@@ -156,101 +156,172 @@ const NotificationImageGenerator = () => {
       }
 
       function continueDrawing() {
-        ctx!.fillStyle = "#0d5fb8";
-        ctx!.font = "bold 48px Arial";
-        ctx!.textAlign = "left";
+  ctx!.fillStyle = "#0d5fb8";
+  ctx!.font = "bold 48px Arial";
+  ctx!.textAlign = "left";
 
-        const orgName = formData.organizationName;
-        const maxWidth = 850;
-        const lineHeight = 62;
-        const words = orgName.split(" ");
-        let line = "";
-        let y = 240;
+  const orgName = formData.organizationName;
+  const maxWidth = 850;
+  const lineHeight = 62;
+  const words = orgName.split(" ");
+  let line = "";
+  let y = 220; // Changed from 200 to 220 to add more space
 
-        words.forEach((word, index) => {
-          const testLine = line + word + " ";
-          const metrics = ctx!.measureText(testLine);
+  words.forEach((word: string, index: number) => {
+    const testLine = line + word + " ";
+    const metrics = ctx!.measureText(testLine);
 
-          if (metrics.width > maxWidth && line !== "") {
-            ctx!.fillText(line, 598, y);
-            line = word + " ";
-            y += lineHeight;
-          } else {
-            line = testLine;
-          }
+    if (metrics.width > maxWidth && line !== "") {
+      ctx!.fillText(line, 598, y);
+      line = word + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
 
-          if (index === words.length - 1) {
-            ctx!.fillText(line, 598, y);
-          }
-        });
+    if (index === words.length - 1) {
+      ctx!.fillText(line, 598, y);
+    }
+  });
 
-        const postY = y + 90;
-        ctx!.fillStyle = "#333";
-        ctx!.font = "bold 36px Arial";
-        ctx!.fillText("👨‍🔬", 705, postY);
-        ctx!.fillText(
-          `${formData.postName} - ${formData.postCount} posts`,
-          755,
-          postY
-        );
+  // Post name with wrapping - keep "- XX posts" together
+  const postY = y + 70;
+  ctx!.fillStyle = "#333";
+  ctx!.font = "bold 36px Arial";
 
-        ctx!.fillText("📅", 705, postY + 65);
-        ctx!.fillStyle = "#d32f2f";
-        ctx!.fillText(`Last Date: ${formData.lastDate}`, 755, postY + 65);
+  const postText = `${formData.postName} - ${formData.postCount} posts`;
+  const postMaxWidth = 800; // Width for first line (with emoji)
+  const postLineHeight = 50;
+  
+  // Split by words but keep "- XX posts" together as one unit
+  const postWords = postText.split(" ");
+  let postLine = "";
+  let currentPostY = postY;
+  let isFirstPostLine = true;
 
-        const buttonY = postY + 150;
-        const gradient = ctx!.createLinearGradient(
-          783,
-          buttonY - 30,
-          1250,
-          buttonY + 30
-        );
-        gradient.addColorStop(0, "#7c4dff");
-        gradient.addColorStop(1, "#9c27b0");
+  for (let index = 0; index < postWords.length; index++) {
+    const word = postWords[index];
+    
+    // Check if this is the dash before post count
+    if (word === "-" && index + 2 < postWords.length) {
+      // Try to keep "- XX posts" together
+      const postCountUnit = `${word} ${postWords[index + 1]} ${postWords[index + 2]}`;
+      const testLine = postLine + postCountUnit + " ";
+      const metrics = ctx!.measureText(testLine);
+      const availableWidth = isFirstPostLine ? postMaxWidth : 850;
 
-        const buttonWidth = 467;
-        const buttonX = (canvas!.width - buttonWidth) / 2;
-
-        ctx!.fillStyle = gradient;
-        ctx!.beginPath();
-        ctx!.roundRect(buttonX, buttonY - 30, buttonWidth, 76, 38);
-        ctx!.fill();
-
-        ctx!.fillStyle = "white";
-        ctx!.font = "bold 38px Arial";
-        ctx!.textAlign = "center";
-        ctx!.fillText(
-          `Vacancy : ${formData.vacancies} Posts`,
-          canvas!.width / 2,
-          buttonY + 15
-        );
-
-        ctx!.fillStyle = "#0d5fb8";
-        ctx!.fillRect(0, 705, canvas!.width, 111);
-
-        ctx!.fillStyle = "white";
-        ctx!.font = "bold 56px Arial";
-        ctx!.fillText("For More info Visit www.gyapak.in", 728, 780);
-
-        if (formData.gyapakLogoUrl) {
-          ctx!.globalAlpha = 0.15;
-          const watermarkLogo = new Image();
-          watermarkLogo.onload = () => {
-            const watermarkWidth = 1350;
-            const watermarkHeight = 400;
-            const x = (canvas!.width - watermarkWidth) / 2;
-            const y = (canvas!.height - watermarkHeight) / 2 - 50;
-            ctx!.drawImage(watermarkLogo, x, y, watermarkWidth, watermarkHeight);
-            ctx!.globalAlpha = 1.0;
-          };
-          watermarkLogo.src = formData.gyapakLogoUrl;
+      if (metrics.width > availableWidth && postLine !== "") {
+        // Print current line and move "- XX posts" to next line
+        if (isFirstPostLine) {
+          ctx!.fillText("👨‍🔬", 598, currentPostY);
+          ctx!.fillText(postLine.trim(), 648, currentPostY);
+          isFirstPostLine = false;
         } else {
-          ctx!.fillStyle = "rgba(139, 74, 158, 0.20)";
-          ctx!.font = "bold 200px Arial";
-          ctx!.textAlign = "center";
-          ctx!.fillText("gyapak", canvas!.width / 2, canvas!.height / 2);
+          ctx!.fillText(postLine.trim(), 648, currentPostY);
         }
+        postLine = postCountUnit + " ";
+        currentPostY += postLineHeight;
+      } else {
+        postLine = testLine;
       }
+      
+      // Skip the next 2 words as we've already processed them
+      index += 2;
+    } else {
+      const testLine = postLine + word + " ";
+      const metrics = ctx!.measureText(testLine);
+      const availableWidth = isFirstPostLine ? postMaxWidth : 850;
+
+      if (metrics.width > availableWidth && postLine !== "") {
+        if (isFirstPostLine) {
+          ctx!.fillText("👨‍🔬", 598, currentPostY);
+          ctx!.fillText(postLine.trim(), 648, currentPostY);
+          isFirstPostLine = false;
+        } else {
+          ctx!.fillText(postLine.trim(), 648, currentPostY);
+        }
+        postLine = word + " ";
+        currentPostY += postLineHeight;
+      } else {
+        postLine = testLine;
+      }
+    }
+
+    // Last word
+    if (index === postWords.length - 1) {
+      if (isFirstPostLine) {
+        ctx!.fillText("👨‍🔬", 598, currentPostY);
+        ctx!.fillText(postLine.trim(), 648, currentPostY);
+      } else {
+        ctx!.fillText(postLine.trim(), 648, currentPostY);
+      }
+    }
+  }
+
+  // Last Date with dynamic positioning
+  const lastDateY: number = currentPostY + 65;
+  ctx!.fillText("📅", 598, lastDateY);
+  ctx!.fillStyle = "#d32f2f";
+  ctx!.fillText(`Last Date: ${formData.lastDate}`, 648, lastDateY);
+
+  // Button with dynamic positioning and left alignment
+  const buttonY: number = lastDateY + 85;
+  const buttonWidth: number = 467;
+  const buttonX: number = 598; // Aligned with other text
+
+  const gradient = ctx!.createLinearGradient(
+    buttonX,
+    buttonY - 30,
+    buttonX + buttonWidth,
+    buttonY + 30
+  );
+  gradient.addColorStop(0, "#7c4dff");
+  gradient.addColorStop(1, "#9c27b0");
+
+  ctx!.fillStyle = gradient;
+  ctx!.beginPath();
+  ctx!.roundRect(buttonX, buttonY - 30, buttonWidth, 76, 38);
+  ctx!.fill();
+
+  ctx!.fillStyle = "white";
+  ctx!.font = "bold 38px Arial";
+  ctx!.textAlign = "center";
+  ctx!.fillText(
+    `Vacancy : ${formData.vacancies} Posts`,
+    buttonX + buttonWidth / 2,
+    buttonY + 15
+  );
+  
+  // Reset text alignment
+  ctx!.textAlign = "left";
+
+  ctx!.fillStyle = "#0d5fb8";
+  ctx!.fillRect(0, 705, canvas!.width, 111);
+
+  ctx!.fillStyle = "white";
+  ctx!.font = "bold 56px Arial";
+  ctx!.textAlign = "center";
+  ctx!.fillText("For More info Visit www.gyapak.in", 728, 780);
+
+  if (formData.gyapakLogoUrl) {
+    ctx!.globalAlpha = 0.15;
+    const watermarkLogo = new Image();
+    watermarkLogo.onload = () => {
+      const watermarkWidth: number = 1350;
+      const watermarkHeight: number = 400;
+      const x: number = (canvas!.width - watermarkWidth) / 2;
+      const y: number = (canvas!.height - watermarkHeight) / 2 - 50;
+      ctx!.drawImage(watermarkLogo, x, y, watermarkWidth, watermarkHeight);
+      ctx!.globalAlpha = 1.0;
+    };
+    watermarkLogo.src = formData.gyapakLogoUrl;
+  } else {
+    ctx!.fillStyle = "rgba(139, 74, 158, 0.20)";
+    ctx!.font = "bold 200px Arial";
+    ctx!.textAlign = "center";
+    ctx!.fillText("gyapak", canvas!.width / 2, canvas!.height / 2);
+  }
+}
     }
   };
 
